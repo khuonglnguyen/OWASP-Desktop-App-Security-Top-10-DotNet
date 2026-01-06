@@ -96,3 +96,23 @@ jobs:
           name: codeql-sarif
           path: ${{ github.workspace }}/results/*.sarif
           if-no-files-found: warn
+
+      - name: Upload SARIF to Code Scanning API
+        if: always()
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          SARIF_DIR="${{ github.workspace }}/results"
+          for f in "$SARIF_DIR"/*.sarif; do
+            [ -f "$f" ] || { echo "No SARIF files to upload."; continue; }
+            echo "Uploading $f to Code Scanning API"
+            if command -v jq >/dev/null 2>&1; then
+              SARIF_JSON=$(jq -Rs '.' "$f")
+            else
+              SARIF_JSON=$(python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))' < "$f")
+            fi
+            payload=$(printf '%s' "{\"commit_sha\":\"${{ github.sha }}\",\"ref\":\"${{ github.ref }}\",\"sarif\":$SARIF_JSON}")
+            curl -sS -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Content-Type: application/json" -d "$payload" "https://api.github.com/repos/${{ github.repository }}/code-scanning/sarifs" | jq -R '.' || true
+          done
