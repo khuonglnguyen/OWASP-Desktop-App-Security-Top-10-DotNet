@@ -68,7 +68,8 @@ jobs:
         shell: bash
         run: |
           echo "Workspace: ${{ github.workspace }}"
-          ls -la "${{ github.workspace }}/results" || true
+          echo "Looking for .sarif files under the workspace (this helps debug missing files)"
+          find "${{ github.workspace }}" -type f -name "*.sarif" -print || true
 
       # Upload SARIF artifacts using absolute path in the workspace
       - name: Upload SARIF results
@@ -76,5 +77,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: codeql-sarif
-          path: ${{ github.workspace }}/results/*.sarif
+          # Upload any SARIF file found anywhere in the workspace to avoid missing files
+          path: ${{ github.workspace }}/**/*.sarif
           if-no-files-found: warn
