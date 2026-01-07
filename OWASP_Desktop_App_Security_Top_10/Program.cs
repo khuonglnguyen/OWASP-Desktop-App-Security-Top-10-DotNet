@@ -1,120 +1,72 @@
-﻿namespace OWASP_Desktop_App_Security_Top_10
+﻿using System;
+using System.Diagnostics;
+using System.IO;
+using System.Security.Cryptography;
+using Microsoft.Data.Sqlite;
+
+namespace OWASP_Desktop_App_Security_Top_10
 {
     static class Program
     {
-        // Demo for DA2 - Broken Authentication & Session Management
-        // Vulnerabilities demonstrated:
-        // 1. Plain text password storage
-        // 2. Predictable session IDs
-        // 3. No session expiration
-        // 4. No proper logout mechanism
-
-        private static Dictionary<string, string> users = new Dictionary<string, string>
+        static void Main(string[] args)
         {
-            { "admin", "password123" },  // Plain text password - VULNERABLE
-            { "user", "userpass" }
-        };
-
-        private static Dictionary<int, string> sessions = new Dictionary<int, string>();
-        private static int sessionCounter = 1;  // Predictable session ID - VULNERABLE
-
-        static void Main()
-        {
-            Console.WriteLine("OWASP Desktop App Security Top 10 - DA2 Demo");
-            Console.WriteLine("Broken Authentication & Session Management");
-            Console.WriteLine("==========================================");
-
-            while (true)
+            // Hardcoded password - Security Hotspot
+            string password = "admin123";
+            Console.Write("Enter password: ");
+            string inputPassword = Console.ReadLine() ?? "";
+            if (inputPassword == password)
             {
-                Console.WriteLine("\n1. Login");
-                Console.WriteLine("2. Access Protected Resource");
-                Console.WriteLine("3. Logout");
-                Console.WriteLine("4. Exit");
-                Console.Write("Choose an option: ");
+                Console.WriteLine("Login successful");
+            }
 
-                string? choice = Console.ReadLine();
-                if (choice == null) continue;
+            // SQL Injection vulnerability
+            Console.Write("Enter user name (e.g., '; DROP TABLE users; --): ");
+            string userInput = Console.ReadLine() ?? "'; DROP TABLE users; --";
+            string query = $"SELECT * FROM users WHERE name = '{userInput}'";
+            using (var connection = new SqliteConnection("Data Source=:memory:"))
+            {
+                connection.Open();
+                // Create table first
+                var createCommand = connection.CreateCommand();
+                createCommand.CommandText = "CREATE TABLE users (id INTEGER, name TEXT)";
+                createCommand.ExecuteNonQuery();
 
-                switch (choice)
-                {
-                    case "1":
-                        Login();
-                        break;
-                    case "2":
-                        AccessResource();
-                        break;
-                    case "3":
-                        Logout();
-                        break;
-                    case "4":
-                        return;
-                    default:
-                        Console.WriteLine("Invalid option.");
-                        break;
-                }
+                var command = connection.CreateCommand();
+                command.CommandText = query;
+                command.ExecuteNonQuery();
             }
-        }
 
-        static void Login()
-        {
-            string? username = Console.ReadLine();
-            Console.Write("Password: ");
-            string? password = Console.ReadLine();
+            // Command Injection
+            Console.Write("Enter command (e.g., calc.exe; shutdown /s): ");
+            string commandInput = Console.ReadLine() ?? "calc.exe";
+            Process.Start("cmd.exe", "/c " + commandInput);
 
-            if (username != null && password != null && users.ContainsKey(username) && users[username] == password)
-            {
-                int sessionId = sessionCounter++;  // Predictable session ID
-                sessions[sessionId] = username;
-                Console.WriteLine($"Login successful. Your session ID is: {sessionId}");
-                // Note: Session ID is displayed - VULNERABLE
-            }
-            else
-            {
-                Console.WriteLine("Invalid credentials.");
-            }
-        }
+            // Insecure random number generation
+            Random random = new Random();
+            int insecureNumber = random.Next();
+            Console.WriteLine($"Random number: {insecureNumber}");
 
-        static void AccessResource()
-        {
-            Console.Write("Enter your session ID: ");
-            if (int.TryParse(Console.ReadLine(), out int sessionId))
+            // Path Traversal
+            Console.Write("Enter file path (e.g., ../../../etc/passwd): ");
+            string filePath = Console.ReadLine() ?? "../../../etc/passwd";
+            if (File.Exists(filePath))
             {
-                if (sessions.ContainsKey(sessionId))
-                {
-                    string username = sessions[sessionId];
-                    Console.WriteLine($"Welcome {username}! You have accessed the protected resource.");
-                    // No session expiration - VULNERABLE
-                }
-                else
-                {
-                    Console.WriteLine("Invalid session ID.");
-                }
+                string content = File.ReadAllText(filePath);
+                Console.WriteLine(content);
             }
-            else
-            {
-                Console.WriteLine("Invalid input.");
-            }
-        }
 
-        static void Logout()
-        {
-            Console.Write("Enter your session ID to logout: ");
-            if (int.TryParse(Console.ReadLine(), out int sessionId))
+            // Weak hash function
+            using (MD5 md5 = MD5.Create())
             {
-                if (sessions.ContainsKey(sessionId))
-                {
-                    sessions.Remove(sessionId);
-                    Console.WriteLine("Logged out successfully.");
-                }
-                else
-                {
-                    Console.WriteLine("Invalid session ID.");
-                }
+                byte[] hash = md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes("password"));
+                Console.WriteLine($"MD5 hash: {Convert.ToHexString(hash)}");
             }
-            else
-            {
-                Console.WriteLine("Invalid input.");
-            }
+
+            // Hardcoded API key
+            string apiKey = "sk-1234567890abcdef";
+            Console.WriteLine($"Using API key: {apiKey}");
+
+            Console.WriteLine("Security vulnerabilities added for SonarQube scanning.");
         }
     }
 }
