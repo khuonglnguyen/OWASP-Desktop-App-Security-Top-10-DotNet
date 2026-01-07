@@ -1,8 +1,12 @@
-﻿using System;
+﻿using JWT;
+using JWT.Algorithms;
+using JWT.Serializers;
+using Microsoft.Data.Sqlite;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
-using Microsoft.Data.Sqlite;
+using System.Text.Json;
 
 namespace OWASP_Desktop_App_Security_Top_10
 {
@@ -67,6 +71,49 @@ namespace OWASP_Desktop_App_Security_Top_10
             Console.WriteLine($"Using API key: {apiKey}");
 
             Console.WriteLine("Security vulnerabilities added for SonarQube scanning.");
+
+            var config = new Config();
+            // Use exact lowercase method name to match SCS0015 pattern
+            config.setPassword("NotSoSecr3tP@ssword");
+
+            // Add a common API usage with a hardcoded password that Security Code Scan should detect
+            var cred = new System.Net.NetworkCredential("admin", "NotSoSecr3tP@ssword");
+            Console.WriteLine($"Created credential for user: {cred.UserName}");
+        }
+
+
+
+        public static void JwtTest1()
+        {
+            var payload = new Dictionary<string, object>
+        {
+            { "claim1", 0 },
+            { "claim2", "claim2-value" }
+        };
+
+            IJwtAlgorithm algorithm = new HMACSHA256Algorithm();
+            IJsonSerializer serializer = new JsonNetSerializer();
+            IBase64UrlEncoder urlEncoder = new JwtBase64UrlEncoder();
+            IJwtEncoder encoder = new JwtEncoder(algorithm, serializer, urlEncoder);
+            const string key = "razdvatri";
+
+            // ruleid: jwt-hardcoded-secret
+            var token = encoder.Encode(payload, key);
+            Console.WriteLine(token);
+        }
+    }
+
+    // Small helper class to demonstrate password assignment for analyzer detection
+    class Config
+    {
+        public string Password { get; set; }
+
+        // lowercase method name to match analyzer pattern
+        public void setPassword(string password)
+        {
+            Password = password;
+            // Simulate storing the password in configuration
+            Console.WriteLine("Config password set.");
         }
     }
 }
