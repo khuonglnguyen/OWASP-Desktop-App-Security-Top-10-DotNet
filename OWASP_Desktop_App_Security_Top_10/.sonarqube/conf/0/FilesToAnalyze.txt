@@ -1,0 +1,2 @@
+﻿C:\Users\ADMIN\source\repos\OWASP_Desktop_App_Security_Top_10\OWASP_Desktop_App_Security_Top_10\Program.cs
+C:\Users\ADMIN\source\repos\OWASP_Desktop_App_Security_Top_10\OWASP_Desktop_App_Security_Top_10\obj\Debug\net8.0\apphost.exe
