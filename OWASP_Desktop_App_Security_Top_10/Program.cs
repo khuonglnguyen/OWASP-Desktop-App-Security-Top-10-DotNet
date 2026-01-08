@@ -4,7 +4,7 @@
     {
         static void Main()
         {
-            
+            const string mySecret = "47828a8dd77ee1eb9dde2d5e93cb221ce8c32b37";
         }
     }
 }
