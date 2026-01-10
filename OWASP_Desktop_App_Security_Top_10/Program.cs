@@ -4,7 +4,11 @@
     {
         static void Main()
         {
-            
-        }        
+
+        }
+        public static void Login(string username, string password)
+        {
+            Console.WriteLine($"User login attempt: {username} with password: {password}");
+        }
     }
 }
